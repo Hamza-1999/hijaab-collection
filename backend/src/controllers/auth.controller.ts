@@ -99,7 +99,7 @@ export const Register = async (req: Request, res: Response) => {
 };
 
 export const MyProfile = async (req: Request, res: Response) => {
-  console.log(req.cookies, (req as any).user, "req.cookies");
+  // console.log((req as any).user, "req.cookies");
   if (!(req as any).user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -385,7 +385,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 export const newPassword = async (req: Request, res: Response) => {
   const JWT_SECRET = process.env.JWT_SECRET || "secret_key_Ecommerce";
   try {
-    const { id } = req.params; 
+    const { id } = req.params;
     const { password } = req.body;
 
     const decoded = jwt.verify(id, JWT_SECRET) as { email: string };

@@ -10,12 +10,13 @@ export const authenticateUser = (
 ) => {
   try {
     const token = req.cookies?.Ecommerce;
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
+    if (!token) return res.status(401).json({ message: "Unauthorized.." });
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; uer: any };
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; user: any };
     (req as any).user = decoded;
+    console.log(decoded,"aslkufhak")
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return res.status(401).json({ message: "Invalid or expired token.." });
   }
 };

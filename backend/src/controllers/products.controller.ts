@@ -1,0 +1,224 @@
+import { Request, Response } from "express";
+import { Product } from "../models/products.model";
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "detgh1kpt",
+  api_key: process.env.CLOUDINARY_API_KEY || "588655336827796",
+  api_secret:
+    process.env.CLOUDINARY_API_SECRET || "r65v7uqxsmv65GVliWSPtWQ6A1k",
+});
+
+interface MulterFile {
+  path: string;
+  originalname: string;
+}
+
+// export const createProduct = async (req: Request, res: Response) => {
+//   try {
+//     const {
+//       title,
+//       quantity,
+//       descripiton,
+//       price,
+//       colors,
+//       sizes,
+//       live,
+//       featured,
+//       material,
+//     } = req.body;
+//     const files = req.files as MulterFile[];
+//     if (!files) {
+//       return res
+//         .status(400)
+//         .json({ message: "atleast one product image must be reqquired" });
+//     }
+
+//     if (!title) {
+//       return res
+//         .status(400)
+//         .json({ message: "product title must be reqquired" });
+//     }
+//     if (!descripiton) {
+//       return res
+//         .status(400)
+//         .json({ message: "product descripiton must be required" });
+//     }
+//     if (!price) {
+//       return res
+//         .status(400)
+//         .json({ message: "product price must be reqquired" });
+//     }
+//     if (!colors) {
+//       return res
+//         .status(400)
+//         .json({ message: "product colors must be reqquired" });
+//     }
+//     if (!sizes) {
+//       return res
+//         .status(400)
+//         .json({ message: "product sizes must be reqquired" });
+//     }
+
+//     if (!quantity) {
+//       return res
+//         .status(400)
+//         .json({ message: "product quantity must be reqquired" });
+//     }
+
+//     const uploadPromises = (req as any).files.map((file: MulterFile) => {
+//       cloudinary.uploader.upload(file.path, { folder: "products" });
+//     });
+//     const uploadResults = await Promise.all(uploadPromises);
+
+//     files.forEach((file) => fs.unlinkSync(file.path));
+
+//     const product = await Product.create({
+//       title,
+//       quantity,
+//       descripiton,
+//       price,
+//       colors,
+//       sizes,
+//       live,
+//       featured,
+//       images: uploadResults.map((r) => r.secure_url),
+//     });
+
+//     res
+//       .status(200)
+//       .json({ message: "Product Created Successfully", product: product });
+//   } catch (error) {
+//     console.error("Login error:", error);
+//     res.status(500).json({
+//       message: "Internal server error",
+//       error: (error as Error).message,
+//     });
+//   }
+// };
+export const createProduct = async (req: Request, res: Response) => {
+  try {
+    const {
+      title,
+      quantity,
+      description,
+      price,
+      colors,
+      sizes,
+      live,
+      featured,
+      material,
+    } = req.body;
+
+    const files = req.files as MulterFile[];
+    if (!files || files.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "At least one product image is required" });
+    }
+    if (!title)
+      return res.status(400).json({ message: "Product title is required" });
+    if (!description)
+      return res
+        .status(400)
+        .json({ message: "Product description is required" });
+    if (!price)
+      return res.status(400).json({ message: "Product price is required" });
+    if (!colors)
+      return res.status(400).json({ message: "Product colors are required" });
+    if (!sizes)
+      return res.status(400).json({ message: "Product sizes are required" });
+    if (!quantity)
+      return res.status(400).json({ message: "Product quantity is required" });
+
+    // parse arrays
+    const colorsArray = JSON.parse(colors as string);
+    const sizesArray = JSON.parse(sizes as string);
+
+    // upload images to cloudinary
+    const uploadResults = await Promise.all(
+      files.map((file) =>
+        cloudinary.uploader.upload(file.path, { folder: "products" })
+      )
+    );
+
+    // remove local files
+    files.forEach((file) => fs.unlinkSync(file.path));
+
+    // create product
+    const product = await Product.create({
+      title,
+      description,
+      quantity,
+      price,
+      material,
+      featured,
+      live,
+      colors: colorsArray,
+      sizes: sizesArray,
+      images: uploadResults.map((r) => r.secure_url),
+    });
+
+    res.status(200).json({ message: "Product Created Successfully", product });
+  } catch (error) {
+    console.error("Create product error:", error);
+    res.status(500).json({
+      message: "Internal server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getAllProducts = async (req: Request, res: Response) => {
+  try {
+    const { limit, skip, title, sort, filter } = req?.params;
+
+    let query = { title: "", featured: false, material: "" };
+    if (title) {
+      query.title = { $regex: title, $option: "i" } as any;
+    }
+    if (filter === "allProducts") {
+      query.featured = false;
+      query.material = "";
+    }
+    if (filter === "Cotton" || filter === "Chiffon" || filter === "Silk") {
+      query.material = { $regex: filter, $option: "i" } as any;
+    }
+    if (filter === "featured") {
+      query.featured = true;
+    }
+    let sortOption = { createdAt: -1 } as any;
+    switch (sort) {
+      case "name-asc":
+        sortOption = { title: 1 } as any;
+        break;
+      case "name-dsc":
+        sortOption = { title: -1 } as any;
+        break;
+      case "price-low-to-high":
+        sortOption = { price: 1 } as any;
+        break;
+      case "price-high-to-low":
+        sortOption = { price: -1 } as any;
+        break;
+    }
+    const products = await Product.find({ query })
+      .sort(sortOption)
+      .limit(Number(limit))
+      .skip(Number(skip));
+
+    const total = await Product.countDocuments({ title });
+    if (products) {
+      return res
+        .status(200)
+        .json({ message: "Fetch Products Successfully", products });
+    }
+    if (!products) {
+      return res.status(400).json({ message: "Products Not Found" });
+    }
+  } catch (err: any) {
+    console.log(err, "error in get all products");
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
