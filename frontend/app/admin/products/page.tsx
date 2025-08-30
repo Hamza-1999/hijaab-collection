@@ -1,45 +1,67 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { mockProducts } from "@/lib/mock-data"
-import Link from "next/link"
-import Image from "next/image"
-import { Search, Plus, Edit, Trash2, Eye } from "lucide-react"
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { mockProducts } from "@/lib/mock-data";
+import Link from "next/link";
+import Image from "next/image";
+import { Search, Plus, Edit, Trash2, Eye } from "lucide-react";
+import { useGetAllProducts } from "@/lib/hooks/api";
+import { skip } from "node:test";
+import { useDebounce } from "@/lib/DebounceFuncrtion";
+import { PaginationDemo } from "@/components/Pagination";
 
 export default function AdminProductsPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterBy, setFilterBy] = useState("all")
-  const [sortBy, setSortBy] = useState("name")
+  const [limit, setLimit] = useState("10");
+  const [skip, setSkip] = useState("0");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterBy, setFilterBy] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
+  const debounceTitle = useDebounce(searchTerm, 500);
+  const { data: products, isLoading: productsLoading } = useGetAllProducts(
+    limit,
+    skip,
+    sortBy,
+    filterBy,
+    debounceTitle
+  );
 
   const filteredProducts = mockProducts
     .filter((product) => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesSearch = product.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
       const matchesFilter =
         filterBy === "all" ||
         (filterBy === "featured" && product.featured) ||
         (filterBy === "low-stock" && product.stock < 10) ||
-        product.material.toLowerCase().includes(filterBy.toLowerCase())
-      return matchesSearch && matchesFilter
+        product.material.toLowerCase().includes(filterBy.toLowerCase());
+      return matchesSearch && matchesFilter;
     })
     .sort((a, b) => {
       switch (sortBy) {
         case "price-low":
-          return a.price - b.price
+          return a.price - b.price;
         case "price-high":
-          return b.price - a.price
+          return b.price - a.price;
         case "stock":
-          return a.stock - b.stock
+          return a.stock - b.stock;
         case "name":
-          return a.name.localeCompare(b.name)
+          return a.name.localeCompare(b.name);
         default:
-          return 0
+          return 0;
       }
-    })
+    });
 
   return (
     <div className="space-y-6">
@@ -107,7 +129,10 @@ export default function AdminProductsPage() {
         <CardContent>
           <div className="space-y-4">
             {filteredProducts.map((product) => (
-              <div key={product._id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-slate-50">
+              <div
+                key={product._id}
+                className="flex items-center gap-4 p-4 border rounded-lg hover:bg-slate-50"
+              >
                 <Image
                   src={product.images[0] || "/placeholder.svg"}
                   alt={product.name}
@@ -119,17 +144,31 @@ export default function AdminProductsPage() {
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-semibold text-slate-900">{product.name}</h3>
-                      <p className="text-sm text-slate-600 mt-1">{product.material}</p>
+                      <h3 className="font-semibold text-slate-900">
+                        {product.name}
+                      </h3>
+                      <p className="text-sm text-slate-600 mt-1">
+                        {product.material}
+                      </p>
                       <div className="flex items-center gap-2 mt-2">
-                        {product.featured && <Badge className="bg-amber-100 text-amber-800">Featured</Badge>}
-                        {product.stock < 10 && <Badge variant="destructive">Low Stock</Badge>}
+                        {product.featured && (
+                          <Badge className="bg-amber-100 text-amber-800">
+                            Featured
+                          </Badge>
+                        )}
+                        {product.stock < 10 && (
+                          <Badge variant="destructive">Low Stock</Badge>
+                        )}
                       </div>
                     </div>
 
                     <div className="text-right">
-                      <p className="text-lg font-bold text-slate-900">${product.price}</p>
-                      <p className="text-sm text-slate-600">{product.stock} in stock</p>
+                      <p className="text-lg font-bold text-slate-900">
+                        ${product.price}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        {product.stock} in stock
+                      </p>
                     </div>
                   </div>
 
@@ -142,7 +181,11 @@ export default function AdminProductsPage() {
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 bg-transparent">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 bg-transparent"
+                    >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
                     </Button>
@@ -153,6 +196,7 @@ export default function AdminProductsPage() {
           </div>
         </CardContent>
       </Card>
+      <PaginationDemo/>
     </div>
-  )
+  );
 }

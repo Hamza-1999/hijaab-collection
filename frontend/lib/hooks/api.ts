@@ -1,9 +1,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AddAddress,
+  AllProducts,
   CreatePassword,
+  CreateProduct,
   forgotPassword,
   IAddAddress,
+  IProduct,
   Login,
   LoginProps,
   Logout,
@@ -84,5 +87,25 @@ export const useCreatePassword = () => {
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       CreatePassword(email, password),
+  });
+};
+
+export const useCreateProduct = () => {
+  return useMutation({
+    mutationFn: ({ formData }: { formData: IProduct }) =>
+      CreateProduct(formData),
+  });
+};
+
+export const useGetAllProducts = (
+  limit: string,
+  skip: string,
+  sort: string,
+  filter: string,
+  title: string
+) => {
+  return useQuery({
+    queryKey: ["getAllProducts", { limit, skip, sort, title, filter }],
+    queryFn: () => AllProducts({ limit, skip, sort, title, filter }),
   });
 };
