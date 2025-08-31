@@ -170,55 +170,132 @@ export const createProduct = async (req: Request, res: Response) => {
   }
 };
 
+// export const getAllProducts = async (req: Request, res: Response) => {
+//   try {
+//     const { limit, skip, title, sort, filter } = req?.params;
+
+//     let query = { title: "", featured: false, material: "" };
+//     if (title) {
+//       query.title = { $regex: title, $option: "i" } as any;
+//     }
+//     if (filter === "allProducts") {
+//       query.featured = false;
+//       query.material = "";
+//     }
+//     if (filter === "Cotton" || filter === "Chiffon" || filter === "Silk") {
+//       query.material = { $regex: filter, $option: "i" } as any;
+//     }
+//     if (filter === "featured") {
+//       query.featured = true;
+//     }
+//     let sortOption = { createdAt: -1 } as any;
+//     switch (sort) {
+//       case "name-asc":
+//         sortOption = { title: 1 } as any;
+//         break;
+//       case "name-dsc":
+//         sortOption = { title: -1 } as any;
+//         break;
+//       case "price-low-to-high":
+//         sortOption = { price: 1 } as any;
+//         break;
+//       case "price-high-to-low":
+//         sortOption = { price: -1 } as any;
+//         break;
+//     }
+//     const products = await Product.find(query)
+//       .sort(sortOption)
+//       .limit(Number(limit))
+//       .skip(Number(skip));
+
+//     const total = await Product.countDocuments(query);
+//     if (products) {
+//       return res
+//         .status(200)
+//         .json({ message: "Fetch Products Successfully", products, total });
+//     }
+//     if (!products) {
+//       return res.status(400).json({ message: "Products Not Found" });
+//     }
+//   } catch (err: any) {
+//     console.log(err, "error in get all products");
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { limit, skip, title, sort, filter } = req?.params;
+    const { limit, skip, title, sort, filter } = req.query; // Correct way
 
-    let query = { title: "", featured: false, material: "" };
+    let query: any = {};
+
     if (title) {
-      query.title = { $regex: title, $option: "i" } as any;
-    }
-    if (filter === "allProducts") {
-      query.featured = false;
-      query.material = "";
-    }
-    if (filter === "Cotton" || filter === "Chiffon" || filter === "Silk") {
-      query.material = { $regex: filter, $option: "i" } as any;
+      query.title = { $regex: title, $options: "i" };
     }
     if (filter === "featured") {
       query.featured = true;
+    } else if (
+      [
+        "Cotton-Jersey",
+        "Chiffon",
+        "Premium-Silk",
+        "Georgette",
+        "Bamboo-Fiber",
+      ].includes(filter as string)
+    ) {
+      query.material = { $regex: filter, $options: "i" };
     }
-    let sortOption = { createdAt: -1 } as any;
+
+    let sortOption: any = { createdAt: -1 };
     switch (sort) {
       case "name-asc":
-        sortOption = { title: 1 } as any;
+        sortOption = { title: 1 };
         break;
       case "name-dsc":
-        sortOption = { title: -1 } as any;
+        sortOption = { title: -1 };
         break;
       case "price-low-to-high":
-        sortOption = { price: 1 } as any;
+        sortOption = { price: 1 };
         break;
       case "price-high-to-low":
-        sortOption = { price: -1 } as any;
+        sortOption = { price: -1 };
+        break;
+      case "latest":
+        sortOption = { createdAt: -1 };
         break;
     }
-    const products = await Product.find({ query })
-      .sort(sortOption)
-      .limit(Number(limit))
-      .skip(Number(skip));
 
-    const total = await Product.countDocuments({ title });
-    if (products) {
+    const products = await Product.find(query)
+      .sort(sortOption)
+      .limit(Number(limit)) // Convert to number
+      .skip(Number(skip)); // Convert to number
+
+    const total = await Product.countDocuments(query);
+
+    return res.status(200).json({
+      message: "Fetch Products Successfully",
+      products,
+      total,
+    });
+  } catch (err) {
+    console.error(err, "error in get all products");
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const DeleteProduct = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findByIdAndDelete(id);
+    if (!product) {
+      return res.status(400).json({ message: `product not found` });
+    }
+    if (product) {
       return res
         .status(200)
-        .json({ message: "Fetch Products Successfully", products });
-    }
-    if (!products) {
-      return res.status(400).json({ message: "Products Not Found" });
+        .json({ message: `${product.title} has been remove from products` });
     }
   } catch (err: any) {
-    console.log(err, "error in get all products");
-    res.status(500).json({ message: "Internal Server Error" });
+    console.log(err, "error in deleting product");
+    res.status(500).json({ message: "internal server error", error: err });
   }
 };

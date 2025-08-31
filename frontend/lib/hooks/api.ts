@@ -4,6 +4,7 @@ import {
   AllProducts,
   CreatePassword,
   CreateProduct,
+  DeleteProduct,
   forgotPassword,
   IAddAddress,
   IProduct,
@@ -98,8 +99,8 @@ export const useCreateProduct = () => {
 };
 
 export const useGetAllProducts = (
-  limit: string,
-  skip: string,
+  limit: number,
+  skip: number,
   sort: string,
   filter: string,
   title: string
@@ -107,5 +108,11 @@ export const useGetAllProducts = (
   return useQuery({
     queryKey: ["getAllProducts", { limit, skip, sort, title, filter }],
     queryFn: () => AllProducts({ limit, skip, sort, title, filter }),
+  });
+};
+
+export const useDeleteProduct = () => {
+  return useMutation({
+    mutationFn: (id: string) => DeleteProduct(id),
   });
 };

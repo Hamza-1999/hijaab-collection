@@ -298,7 +298,7 @@ export default function NewProductPage() {
                           <SelectItem value="Premium-Silk">
                             Premium Silk
                           </SelectItem>
-                          <SelectItem value="Cotton Jersey">
+                          <SelectItem value="Cotton-Jersey">
                             Cotton Jersey
                           </SelectItem>
                           <SelectItem value="Chiffon">Chiffon</SelectItem>
@@ -306,7 +306,7 @@ export default function NewProductPage() {
                             Modal Blend
                           </SelectItem>
                           <SelectItem value="Georgette">Georgette</SelectItem>
-                          <SelectItem value="Bamboo Fiber">
+                          <SelectItem value="Bamboo-Fiber">
                             Bamboo Fiber
                           </SelectItem>
                         </SelectContent>

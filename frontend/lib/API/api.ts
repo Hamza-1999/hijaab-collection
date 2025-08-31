@@ -158,6 +158,8 @@ export const CreatePassword = async (email: string, password: string) => {
 };
 
 export interface IProduct {
+  _id?: string;
+  material: string;
   title: string;
   description: string;
   price: string;
@@ -179,12 +181,17 @@ export const CreateProduct = async (formData: IProduct) => {
 };
 
 export const AllProducts = async (params: {
-  limit: string;
-  skip: string;
+  limit: number;
+  skip: number;
   title: string;
   sort: string;
   filter: string;
 }) => {
   const res = await axios.get("http://localhost:5000/products/all", { params });
+  return res.data;
+};
+
+export const DeleteProduct = async (id: string) => {
+  const res = await axios.delete(`http://localhost:5000/products/delete/${id}`);
   return res.data;
 };

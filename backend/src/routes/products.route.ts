@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import {
   createProduct,
+  DeleteProduct,
   getAllProducts,
 } from "../controllers/products.controller";
 import { authenticateUser } from "../middlewares/auth.middleware";
@@ -16,7 +17,7 @@ productsRoutes.post(
   upload.array("images", 5),
   createProduct
 );
-
 productsRoutes.get("/all", getAllProducts);
+productsRoutes.delete("/delete/:id", DeleteProduct);
 
 export default productsRoutes;

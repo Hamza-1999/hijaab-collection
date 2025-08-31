@@ -1,6 +1,5 @@
 "use client";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,53 +15,28 @@ import { mockProducts } from "@/lib/mock-data";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, Plus, Edit, Trash2, Eye } from "lucide-react";
-import { useGetAllProducts } from "@/lib/hooks/api";
-import { skip } from "node:test";
+import { useDeleteProduct, useGetAllProducts } from "@/lib/hooks/api";
 import { useDebounce } from "@/lib/DebounceFuncrtion";
 import { PaginationDemo } from "@/components/Pagination";
-
+import { usePaginationStore } from "@/components/store/PaginationStore";
+import { IProduct } from "@/lib/API/api";
+import { toast } from "sonner";
 export default function AdminProductsPage() {
-  const [limit, setLimit] = useState("10");
-  const [skip, setSkip] = useState("0");
+  const limit = 10;
+  const { offset, settotal } = usePaginationStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBy, setFilterBy] = useState("all");
-  const [sortBy, setSortBy] = useState("name");
+  const [sortBy, setSortBy] = useState("latest");
   const debounceTitle = useDebounce(searchTerm, 500);
-  const { data: products, isLoading: productsLoading } = useGetAllProducts(
-    limit,
-    skip,
-    sortBy,
-    filterBy,
-    debounceTitle
-  );
-
-  const filteredProducts = mockProducts
-    .filter((product) => {
-      const matchesSearch = product.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const matchesFilter =
-        filterBy === "all" ||
-        (filterBy === "featured" && product.featured) ||
-        (filterBy === "low-stock" && product.stock < 10) ||
-        product.material.toLowerCase().includes(filterBy.toLowerCase());
-      return matchesSearch && matchesFilter;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "price-low":
-          return a.price - b.price;
-        case "price-high":
-          return b.price - a.price;
-        case "stock":
-          return a.stock - b.stock;
-        case "name":
-          return a.name.localeCompare(b.name);
-        default:
-          return 0;
-      }
-    });
-
+  const {
+    data: products,
+    isLoading: productsLoading,
+    refetch,
+  } = useGetAllProducts(limit, offset, sortBy, filterBy, debounceTitle);
+  const { mutate: DeleteProduct } = useDeleteProduct();
+  useEffect(() => {
+    settotal(products?.total);
+  }, [products]);
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -77,7 +51,6 @@ export default function AdminProductsPage() {
           </Button>
         </Link>
       </div>
-
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
@@ -92,7 +65,16 @@ export default function AdminProductsPage() {
               />
             </div>
 
-            <Select value={filterBy} onValueChange={setFilterBy}>
+            <Select
+              value={filterBy}
+              onValueChange={(e) => {
+                if (e === "all") {
+                  setFilterBy("");
+                } else {
+                  setFilterBy(e);
+                }
+              }}
+            >
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
@@ -111,41 +93,44 @@ export default function AdminProductsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">Name A-Z</SelectItem>
-                <SelectItem value="price-low">Price: Low to High</SelectItem>
-                <SelectItem value="price-high">Price: High to Low</SelectItem>
-                <SelectItem value="stock">Stock Level</SelectItem>
+                <SelectItem value="latest">Latest</SelectItem>
+                <SelectItem value="name-asc">Name A-Z</SelectItem>
+                <SelectItem value="name-dsc">Name Z-A</SelectItem>
+                <SelectItem value="price-low-to-high">
+                  Price: Low to High
+                </SelectItem>
+                <SelectItem value="price-high-to-low">
+                  Price: High to Low
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
-
       {/* Products Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Products ({filteredProducts.length})</CardTitle>
+          <CardTitle>Products ({products?.total})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {filteredProducts.map((product) => (
+            {products?.products?.map((product: IProduct) => (
               <div
                 key={product._id}
                 className="flex items-center gap-4 p-4 border rounded-lg hover:bg-slate-50"
               >
                 <Image
                   src={product.images[0] || "/placeholder.svg"}
-                  alt={product.name}
+                  alt={product.title}
                   width={80}
                   height={80}
                   className="w-20 h-20 object-cover rounded-lg"
                 />
-
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-semibold text-slate-900">
-                        {product.name}
+                        {product.title}
                       </h3>
                       <p className="text-sm text-slate-600 mt-1">
                         {product.material}
@@ -156,22 +141,20 @@ export default function AdminProductsPage() {
                             Featured
                           </Badge>
                         )}
-                        {product.stock < 10 && (
+                        {Number(product.quantity) < 10 && (
                           <Badge variant="destructive">Low Stock</Badge>
                         )}
                       </div>
                     </div>
-
                     <div className="text-right">
                       <p className="text-lg font-bold text-slate-900">
                         ${product.price}
                       </p>
                       <p className="text-sm text-slate-600">
-                        {product.stock} in stock
+                        {product.quantity} in stock
                       </p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-2 mt-4">
                     <Button size="sm" variant="outline">
                       <Eye className="h-4 w-4 mr-2" />
@@ -182,6 +165,26 @@ export default function AdminProductsPage() {
                       Edit
                     </Button>
                     <Button
+                      onClick={() => {
+                        DeleteProduct(product._id as string, {
+                          onSuccess: () => {
+                            toast.success(
+                              `${product.title} has been deleted successfully`
+                            );
+                            refetch();
+                          },
+                          onError: (error: any) => {
+                            toast.success(
+                              error?.response?.data?.message ||
+                                `${product.title} has been deleted successfully`
+                            );
+                            console.log(
+                              error,
+                              `error in deleting ${product.title}`
+                            );
+                          },
+                        });
+                      }}
                       size="sm"
                       variant="outline"
                       className="text-red-600 hover:text-red-700 bg-transparent"
@@ -196,7 +199,7 @@ export default function AdminProductsPage() {
           </div>
         </CardContent>
       </Card>
-      <PaginationDemo/>
+      <PaginationDemo />
     </div>
   );
 }
