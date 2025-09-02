@@ -195,3 +195,36 @@ export const DeleteProduct = async (id: string) => {
   const res = await axios.delete(`http://localhost:5000/products/delete/${id}`);
   return res.data;
 };
+
+export const GetProductById = async (id: string) => {
+  const res = await axios.get(`http://localhost:5000/products/${id}`);
+  return res.data;
+};
+export interface UProduct {
+  _id?: string;
+  material: string;
+  title: string;
+  description: string;
+  price: string;
+  quantity: string;
+  images: any;
+  colors: string[];
+  sizes: string[];
+  live: boolean;
+  featured: boolean;
+  oldImages: string[];
+}
+
+export const UpdateProduct = async (id: any, formData: UProduct) => {
+  const res = await axios.put(
+    `http://localhost:5000/products/update/${id.id}`,
+    formData,
+    {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+  return res.data;
+};

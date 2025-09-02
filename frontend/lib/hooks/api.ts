@@ -6,6 +6,7 @@ import {
   CreateProduct,
   DeleteProduct,
   forgotPassword,
+  GetProductById,
   IAddAddress,
   IProduct,
   Login,
@@ -16,8 +17,10 @@ import {
   RegisterProps,
   RemoveAddress,
   UpdateAddress,
+  UpdateProduct,
   updateProfile,
   UpdateProfile,
+  UProduct,
 } from "../API/api";
 
 export const useLogin = () => {
@@ -114,5 +117,19 @@ export const useGetAllProducts = (
 export const useDeleteProduct = () => {
   return useMutation({
     mutationFn: (id: string) => DeleteProduct(id),
+  });
+};
+
+export const useGetProductById = (id: string) => {
+  return useQuery({
+    queryKey: ["getProductById", id],
+    queryFn: () => GetProductById(id),
+  });
+};
+
+export const useUpdateProduct = () => {
+  return useMutation({
+    mutationFn: ({ id, formData }: { id: string; formData: UProduct }) =>
+      UpdateProduct(id, formData),
   });
 };

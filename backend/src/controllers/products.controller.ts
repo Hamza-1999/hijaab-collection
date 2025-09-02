@@ -233,6 +233,9 @@ export const getAllProducts = async (req: Request, res: Response) => {
     }
     if (filter === "featured") {
       query.featured = true;
+    }
+    if (filter === "low-stock") {
+      query.quantity = { $lt: 10 };
     } else if (
       [
         "Cotton-Jersey",
@@ -296,6 +299,87 @@ export const DeleteProduct = async (req: Request, res: Response) => {
     }
   } catch (err: any) {
     console.log(err, "error in deleting product");
+    res.status(500).json({ message: "internal server error", error: err });
+  }
+};
+
+export const getProductById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(400).json({ message: `product not found` });
+    }
+    return res.status(200).json({ message: "product found", product });
+  } catch (err: any) {
+    console.log(err, "error in getting product by id");
+    res.status(500).json({ message: "internal server error", error: err });
+  }
+};
+
+export const updateProduct = async (req: Request, res: Response) => {
+  try {
+    console.log(req.body, "req req req 2");
+    const { id } = req.params;
+    const productToUpdate = await Product.findById(id);
+    const files = req.files as MulterFile[];
+    const {
+      title,
+      description,
+      quantity,
+      price,
+      material,
+      featured,
+      live,
+      colors,
+      sizes,
+      oldImages,
+    } = req.body;
+    let UpdatedImages: string[] = [];
+    if (oldImages && oldImages.length > 0) {
+      if (!productToUpdate) {
+        return res.status(400).json({ message: `product not found` });
+      }
+      UpdatedImages = productToUpdate.images.filter((image) =>
+        oldImages.includes(image)
+      );
+    }
+    if (files && files.length > 0) {
+      const uploadResults = await Promise.all(
+        files.map((file) =>
+          cloudinary.uploader.upload(file.path, { folder: "products" })
+        )
+      );
+      UpdatedImages = [
+        ...UpdatedImages,
+        ...uploadResults.map((r) => r.secure_url),
+      ];
+      files.forEach((file) => fs.unlinkSync(file.path));
+    }
+    const product = await Product.findByIdAndUpdate(
+      id,
+      {
+        title,
+        description,
+        quantity,
+        price,
+        material,
+        featured,
+        live,
+        colors,
+        sizes,
+        images: UpdatedImages,
+      },
+      { new: true }
+    );
+    if (!productToUpdate) {
+      return res.status(400).json({ message: `product not found` });
+    }
+    return res
+      .status(200)
+      .json({ message: "product updated", productToUpdate });
+  } catch (err: any) {
+    console.log(err, "error in updating product");
     res.status(500).json({ message: "internal server error", error: err });
   }
 };

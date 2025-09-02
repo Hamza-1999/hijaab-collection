@@ -11,17 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { mockProducts } from "@/lib/mock-data";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Plus, Edit, Trash2, Eye } from "lucide-react";
+import { Search, Plus, Edit, Eye, Loader2 } from "lucide-react";
 import { useDeleteProduct, useGetAllProducts } from "@/lib/hooks/api";
 import { useDebounce } from "@/lib/DebounceFuncrtion";
 import { PaginationDemo } from "@/components/Pagination";
 import { usePaginationStore } from "@/components/store/PaginationStore";
 import { IProduct } from "@/lib/API/api";
 import { toast } from "sonner";
+import ConfirmationModal from "@/components/ConfirmationModal";
+import { useRouter } from "next/navigation";
 export default function AdminProductsPage() {
+  const router = useRouter();
   const limit = 10;
   const { offset, settotal } = usePaginationStore();
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,7 +35,7 @@ export default function AdminProductsPage() {
     isLoading: productsLoading,
     refetch,
   } = useGetAllProducts(limit, offset, sortBy, filterBy, debounceTitle);
-  const { mutate: DeleteProduct } = useDeleteProduct();
+  const { mutate: DeleteProduct, isPending: isDeleting } = useDeleteProduct();
   useEffect(() => {
     settotal(products?.total);
   }, [products]);
@@ -108,97 +110,99 @@ export default function AdminProductsPage() {
         </CardContent>
       </Card>
       {/* Products Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Products ({products?.total})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {products?.products?.map((product: IProduct) => (
-              <div
-                key={product._id}
-                className="flex items-center gap-4 p-4 border rounded-lg hover:bg-slate-50"
-              >
-                <Image
-                  src={product.images[0] || "/placeholder.svg"}
-                  alt={product.title}
-                  width={80}
-                  height={80}
-                  className="w-20 h-20 object-cover rounded-lg"
-                />
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-slate-900">
-                        {product.title}
-                      </h3>
-                      <p className="text-sm text-slate-600 mt-1">
-                        {product.material}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        {product.featured && (
-                          <Badge className="bg-amber-100 text-amber-800">
-                            Featured
-                          </Badge>
-                        )}
-                        {Number(product.quantity) < 10 && (
-                          <Badge variant="destructive">Low Stock</Badge>
-                        )}
+      {productsLoading ? (
+        <div className="flex justify-center items-center h-full">
+          <Loader2 className="w-4 h-4 animate-spin" />
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Products ({products?.total})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {products?.products?.map((product: IProduct) => (
+                <div
+                  key={product._id}
+                  className="flex items-center gap-4 p-4 border rounded-lg hover:bg-slate-50"
+                >
+                  <Image
+                    src={product.images[0] || "/placeholder.svg"}
+                    alt={product.title}
+                    width={80}
+                    height={80}
+                    className="w-20 h-20 object-cover rounded-lg"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold text-slate-900">
+                          {product.title}
+                        </h3>
+                        <p className="text-sm text-slate-600 mt-1">
+                          {product.material}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          {product.featured && (
+                            <Badge className="bg-amber-100 text-amber-800">
+                              Featured
+                            </Badge>
+                          )}
+                          {Number(product.quantity) < 10 && (
+                            <Badge variant="destructive">Low Stock</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-slate-900">
+                          ${product.price}
+                        </p>
+                        <p className="text-sm text-slate-600">
+                          {product.quantity} in stock
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-slate-900">
-                        ${product.price}
-                      </p>
-                      <p className="text-sm text-slate-600">
-                        {product.quantity} in stock
-                      </p>
+                    <div className="flex items-center gap-2 mt-4">
+                      <Button onClick={() => router.push(`/admin/products/${product._id}`)} size="sm" variant="outline">
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                      <Button onClick={() => router.push(`/admin/products/new?id=${product._id}`)} size="sm" variant="outline">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <ConfirmationModal
+                        onClick={() => {
+                          DeleteProduct(product._id as string, {
+                            onSuccess: () => {
+                              toast.success(
+                                `${product.title} has been deleted successfully`
+                              );
+                              refetch();
+                            },
+                            onError: (error: any) => {
+                              toast.success(
+                                error?.response?.data?.message ||
+                                  `${product.title} has been deleted successfully`
+                              );
+                              console.log(
+                                error,
+                                `error in deleting ${product.title}`
+                              );
+                            },
+                          });
+                        }}
+                        buttonText="Delete"
+                        isLoading={isDeleting}
+                      />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-4">
-                    <Button size="sm" variant="outline">
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        DeleteProduct(product._id as string, {
-                          onSuccess: () => {
-                            toast.success(
-                              `${product.title} has been deleted successfully`
-                            );
-                            refetch();
-                          },
-                          onError: (error: any) => {
-                            toast.success(
-                              error?.response?.data?.message ||
-                                `${product.title} has been deleted successfully`
-                            );
-                            console.log(
-                              error,
-                              `error in deleting ${product.title}`
-                            );
-                          },
-                        });
-                      }}
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700 bg-transparent"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       <PaginationDemo />
     </div>
   );
