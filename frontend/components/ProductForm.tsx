@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
@@ -83,14 +82,8 @@ export default function ProductForm({ product }: { product?: any }) {
         quantity: product.product.quantity?.toString() || "0",
         material: product.product.material,
         featured: product.product.featured,
-        colors:
-          typeof product.product.colors === "string"
-            ? JSON.parse(product.product.colors)
-            : product.product.colors || [],
-        sizes:
-          typeof product.product.sizes === "string"
-            ? JSON.parse(product.product.sizes)
-            : product.product.sizes || [],
+        colors: product.product.colors,
+        sizes: product.product.sizes,
         images: [],
       });
       setOldImages(product?.product?.images);
@@ -285,8 +278,9 @@ export default function ProductForm({ product }: { product?: any }) {
                       <Label htmlFor="material">Material</Label>
                       <Select
                         {...field}
+                        defaultValue={field.value}
                         onValueChange={field.onChange}
-                        value={field.value}
+                        value={field.value ?? ""}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select material" />
@@ -359,7 +353,10 @@ export default function ProductForm({ product }: { product?: any }) {
                             const filteredFiles = filesArray.filter((file) =>
                               allowedTypes.includes(file.type)
                             );
-                            field.onChange([...field.value, ...filteredFiles]);
+                            field.onChange([
+                              ...(field.value as File[]),
+                              ...filteredFiles,
+                            ]);
                           }
                         }}
                       />
@@ -369,7 +366,7 @@ export default function ProductForm({ product }: { product?: any }) {
                         </p>
                       )}
                       <div className="mt-5 flex items-center gap-2 flex-wrap">
-                        {field.value.map((img: File, i: number) => (
+                        {field?.value?.map((img: File, i: number) => (
                           <div
                             key={i}
                             className="relative border-2 border-dashed border-gray-600 p-2"
@@ -383,7 +380,7 @@ export default function ProductForm({ product }: { product?: any }) {
                             />
                             <span
                               onClick={() => {
-                                const newFiles = field.value.filter(
+                                const newFiles = field?.value?.filter(
                                   (file: File) => file.name !== img.name
                                 );
                                 field.onChange(newFiles);
@@ -410,7 +407,10 @@ export default function ProductForm({ product }: { product?: any }) {
                                 >
                                   <Image
                                     key={i}
-                                    src={`${oldimg}`}
+                                    src={
+                                      `${oldimg}` ||
+                                      "data:image/png;base64,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"
+                                    }
                                     alt={oldimg}
                                     width={100}
                                     height={100}

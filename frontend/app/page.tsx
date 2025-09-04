@@ -1,15 +1,26 @@
-import { Header } from "@/components/user/header"
-import { Footer } from "@/components/user/footer"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { mockProducts } from "@/lib/mock-data"
-import Link from "next/link"
-import Image from "next/image"
-import { Star, Truck, Shield, RefreshCw } from "lucide-react"
+"use client";
+import { Header } from "@/components/user/header";
+import { Footer } from "@/components/user/footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { mockProducts } from "@/lib/mock-data";
+import Link from "next/link";
+import Image from "next/image";
+import { Star, Truck, Shield, RefreshCw } from "lucide-react";
+import { useGetAllProducts } from "@/lib/hooks/api";
+import { usePaginationStore } from "@/components/store/PaginationStore";
+import { IProduct } from "@/lib/API/api";
 
 export default function HomePage() {
-  const featuredProducts = mockProducts.filter((product) => product.featured)
+  const { offset } = usePaginationStore();
+  const { data } = useGetAllProducts({
+    limit: 100,
+    skip: offset,
+    filter: "featured",
+  });
+  const featuredProducts = data?.products;
+  // const featuredProducts = mockProducts.filter((product) => product.featured);
 
   return (
     <div className="min-h-screen bg-white">
@@ -25,8 +36,9 @@ export default function HomePage() {
                 <span className="text-amber-800"> Modern Woman</span>
               </h1>
               <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                Discover our exquisite collection of premium hijabs crafted with the finest materials. Each piece
-                combines traditional elegance with contemporary style.
+                Discover our exquisite collection of premium hijabs crafted with
+                the finest materials. Each piece combines traditional elegance
+                with contemporary style.
               </p>
               <div className="flex gap-4">
                 <Button size="lg" className="bg-amber-800 hover:bg-amber-900">
@@ -59,14 +71,18 @@ export default function HomePage() {
                 <Truck className="h-8 w-8 text-amber-800" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Free Shipping</h3>
-              <p className="text-slate-600">Free shipping on all orders over $50</p>
+              <p className="text-slate-600">
+                Free shipping on all orders over $50
+              </p>
             </div>
             <div className="text-center">
               <div className="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Shield className="h-8 w-8 text-amber-800" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Premium Quality</h3>
-              <p className="text-slate-600">Finest materials and craftsmanship</p>
+              <p className="text-slate-600">
+                Finest materials and craftsmanship
+              </p>
             </div>
             <div className="text-center">
               <div className="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -83,38 +99,55 @@ export default function HomePage() {
       <section className="py-16 bg-slate-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">Featured Collection</h2>
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+              Featured Collection
+            </h2>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              Handpicked selection of our most popular hijabs, loved by women worldwide
+              Handpicked selection of our most popular hijabs, loved by women
+              worldwide
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <Card key={product._id} className="group hover:shadow-lg transition-shadow">
+            {featuredProducts?.map((product: IProduct) => (
+              <Card
+                key={product?._id}
+                className="group hover:shadow-lg transition-shadow"
+              >
                 <CardContent className="p-0">
                   <div className="relative overflow-hidden rounded-t-lg">
                     <Image
-                      src={product.images[0] || "/placeholder.svg"}
-                      alt={product.name}
+                      src={product?.images[0] || "/placeholder.svg"}
+                      alt={product?.title}
                       width={300}
                       height={300}
                       className="w-full h-64 object-cover group-hover:scale-105 transition-transform"
                     />
-                    <Badge className="absolute top-2 left-2 bg-amber-800">Featured</Badge>
+                    <Badge className="absolute top-2 left-2 bg-amber-800">
+                      Featured
+                    </Badge>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-slate-900 mb-2">{product.name}</h3>
-                    <p className="text-sm text-slate-600 mb-3 line-clamp-2">{product.description}</p>
+                    <h3 className="font-semibold text-slate-900 mb-2">
+                      {product?.title}
+                    </h3>
+                    <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                      {product?.description}
+                    </p>
                     <div className="flex items-center gap-1 mb-3">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                        <Star
+                          key={i}
+                          className="h-4 w-4 fill-amber-400 text-amber-400"
+                        />
                       ))}
                       <span className="text-sm text-slate-500 ml-1">(4.8)</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-amber-800">${product.price}</span>
-                      <Link href={`/products/${product._id}`}>
+                      <span className="text-lg font-bold text-amber-800">
+                        {product?.price} PKR
+                      </span>
+                      <Link href={`/products/${product?._id}`}>
                         <Button size="sm">View Details</Button>
                       </Link>
                     </div>
@@ -136,5 +169,5 @@ export default function HomePage() {
 
       <Footer />
     </div>
-  )
+  );
 }

@@ -180,12 +180,12 @@ export const CreateProduct = async (formData: IProduct) => {
   return res.data;
 };
 
-export const AllProducts = async (params: {
-  limit: number;
-  skip: number;
-  title: string;
-  sort: string;
-  filter: string;
+export const AllProducts = async (params?: {
+  limit?: number;
+  skip?: number;
+  title?: string;
+  sort?: string;
+  filter?: string;
 }) => {
   const res = await axios.get("http://localhost:5000/products/all", { params });
   return res.data;

@@ -101,16 +101,16 @@ export const useCreateProduct = () => {
   });
 };
 
-export const useGetAllProducts = (
-  limit: number,
-  skip: number,
-  sort: string,
-  filter: string,
-  title: string
-) => {
+export const useGetAllProducts = (params?: {
+  limit?: number;
+  skip?: number;
+  sort?: string;
+  filter?: string;
+  title?: string;
+}) => {
   return useQuery({
-    queryKey: ["getAllProducts", { limit, skip, sort, title, filter }],
-    queryFn: () => AllProducts({ limit, skip, sort, title, filter }),
+    queryKey: ["getAllProducts", params],
+    queryFn: () => AllProducts(params),
   });
 };
 

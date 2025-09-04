@@ -34,7 +34,7 @@ export default function AdminProductsPage() {
     data: products,
     isLoading: productsLoading,
     refetch,
-  } = useGetAllProducts(limit, offset, sortBy, filterBy, debounceTitle);
+  } = useGetAllProducts({limit, skip:offset, sort:sortBy, filter:filterBy, title:debounceTitle});
   const { mutate: DeleteProduct, isPending: isDeleting } = useDeleteProduct();
   useEffect(() => {
     settotal(products?.total);
