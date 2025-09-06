@@ -2,11 +2,16 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AddAddress,
   AllProducts,
+  CreateSettings,
   CreatePassword,
   CreateProduct,
   DeleteProduct,
+  DeleteUser,
   forgotPassword,
+  getAllUsers,
   GetProductById,
+  GetSettings,
+  GetUserById,
   IAddAddress,
   IProduct,
   Login,
@@ -20,7 +25,9 @@ import {
   UpdateProduct,
   updateProfile,
   UpdateProfile,
+  UpdateUserStatus,
   UProduct,
+  UpdateSettings,
 } from "../API/api";
 
 export const useLogin = () => {
@@ -131,5 +138,57 @@ export const useUpdateProduct = () => {
   return useMutation({
     mutationFn: ({ id, formData }: { id: string; formData: UProduct }) =>
       UpdateProduct(id, formData),
+  });
+};
+
+export const useGetAllUsers = (params?: {
+  limit?: number;
+  skip?: number;
+  name?: string;
+  filter?: string;
+}) => {
+  return useQuery({
+    queryKey: ["getAllUsers", params],
+    queryFn: () => getAllUsers(params),
+  });
+};
+
+export const useGetUserById = (id: string) => {
+  return useQuery({
+    queryKey: ["getSingleUser"],
+    queryFn: () => GetUserById(id as string),
+  });
+};
+
+export const useDeleteUser = () => {
+  return useMutation({
+    mutationFn: (id: string) => DeleteUser(id),
+  });
+};
+
+export const useUpdateUserStatus = () => {
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      UpdateUserStatus(id, status),
+  });
+};
+
+export const useGetSettings = () => {
+  return useQuery({
+    queryKey: ["getSettings"],
+    queryFn: GetSettings,
+  });
+};
+
+export const useCreateSettings = () => {
+  return useMutation({
+    mutationFn: (data: any) => CreateSettings(data),
+  });
+};
+
+export const useUpdateSettings = () => {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      UpdateSettings(id, data),
   });
 };

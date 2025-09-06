@@ -9,7 +9,7 @@ export const adminAuthentication = (
     const user = (req as any).user;
     const cookie = (req as any).cookies?.Ecommerce;
 
-    console.log(user.user.role, "user user user");
+    // console.log(user.user.role, "user user user");
 
     if (!user || user.user.role !== "admin") {
       return res

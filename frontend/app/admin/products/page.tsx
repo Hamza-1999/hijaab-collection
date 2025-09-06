@@ -14,7 +14,11 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { Search, Plus, Edit, Eye, Loader2 } from "lucide-react";
-import { useDeleteProduct, useGetAllProducts } from "@/lib/hooks/api";
+import {
+  useDeleteProduct,
+  useGetAllProducts,
+  useGetSettings,
+} from "@/lib/hooks/api";
 import { useDebounce } from "@/lib/DebounceFuncrtion";
 import { PaginationDemo } from "@/components/Pagination";
 import { usePaginationStore } from "@/components/store/PaginationStore";
@@ -23,6 +27,7 @@ import { toast } from "sonner";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { useRouter } from "next/navigation";
 export default function AdminProductsPage() {
+  const { data: settings } = useGetSettings();
   const router = useRouter();
   const limit = 10;
   const { offset, settotal } = usePaginationStore();
@@ -34,7 +39,13 @@ export default function AdminProductsPage() {
     data: products,
     isLoading: productsLoading,
     refetch,
-  } = useGetAllProducts({limit, skip:offset, sort:sortBy, filter:filterBy, title:debounceTitle});
+  } = useGetAllProducts({
+    limit,
+    skip: offset,
+    sort: sortBy,
+    filter: filterBy,
+    title: debounceTitle,
+  });
   const { mutate: DeleteProduct, isPending: isDeleting } = useDeleteProduct();
   useEffect(() => {
     settotal(products?.total);
@@ -148,7 +159,8 @@ export default function AdminProductsPage() {
                               Featured
                             </Badge>
                           )}
-                          {Number(product.quantity) < 10 && (
+                          {Number(product.quantity) <
+                            settings.settings[0].quantityForLowStock && (
                             <Badge variant="destructive">Low Stock</Badge>
                           )}
                         </div>
@@ -163,11 +175,23 @@ export default function AdminProductsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-4">
-                      <Button onClick={() => router.push(`/admin/products/${product._id}`)} size="sm" variant="outline">
+                      <Button
+                        onClick={() =>
+                          router.push(`/admin/products/${product._id}`)
+                        }
+                        size="sm"
+                        variant="outline"
+                      >
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
-                      <Button onClick={() => router.push(`/admin/products/new?id=${product._id}`)} size="sm" variant="outline">
+                      <Button
+                        onClick={() =>
+                          router.push(`/admin/products/new?id=${product._id}`)
+                        }
+                        size="sm"
+                        variant="outline"
+                      >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </Button>

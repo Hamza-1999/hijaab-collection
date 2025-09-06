@@ -83,6 +83,11 @@ export const Register = async (req: Request, res: Response) => {
       lastName,
       phone,
       address,
+      totalOrders: 0,
+      totalSpent: 0,
+      lastOrder: null,
+      addresses: [{ ...address, isDefault: true }],
+      status: "active",
     });
     const { password: _, ...userWithoutPassword } = user.toObject();
     res.status(201).json({

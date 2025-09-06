@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Product } from "../models/products.model";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+import { Settings } from "../models/settings.model";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "detgh1kpt",
@@ -234,8 +235,9 @@ export const getAllProducts = async (req: Request, res: Response) => {
     if (filter === "featured") {
       query.featured = true;
     }
+    const settings = await Settings.find().sort({ createdAt: -1 });
     if (filter === "low-stock") {
-      query.quantity = { $lt: 10 };
+      query.quantity = { $lt: settings[0]?.quantityForLowStock || 10 };
     } else if (
       [
         "Cotton-Jersey",

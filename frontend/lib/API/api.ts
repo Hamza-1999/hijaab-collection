@@ -228,3 +228,58 @@ export const UpdateProduct = async (id: any, formData: UProduct) => {
   );
   return res.data;
 };
+
+export const getAllUsers = async (params?: {
+  limit?: number;
+  skip?: number;
+  name?: string;
+  filter?:string
+}) => {
+  const res = await axios.get(`http://localhost:5000/users/all`, {
+    params,
+    withCredentials: true,
+  });
+  return res.data;
+};
+
+export const GetUserById = async (id: string) => {
+  const res = await axios.get(`http://localhost:5000/users/${id}`, {
+    withCredentials: true,
+  });
+  return res.data;
+};
+
+export const DeleteUser = async (id: string) => {
+  const res = await axios.delete(`http://localhost:5000/users/${id}`, {
+    withCredentials: true,
+  });
+  return res.data;
+};
+
+export const UpdateUserStatus = async (id: string, status: string) => {
+  const res = await axios.patch(`http://localhost:5000/users/${id}/status`, { status }, {
+    withCredentials: true,
+  });
+  return res.data;
+};
+
+export const GetSettings = async () => {
+  const res = await axios.get(`http://localhost:5000/settings`, {
+    withCredentials: true,
+  });  
+  return res.data;
+};
+
+export const CreateSettings = async (data: any) => {
+  const res = await axios.post(`http://localhost:5000/settings`, data, {
+    withCredentials: true,
+  });
+  return res.data;
+};
+
+export const UpdateSettings = async (id: string, data: any) => {
+  const res = await axios.put(`http://localhost:5000/settings/${id}`, data, {
+    withCredentials: true,
+  });
+  return res.data;
+};

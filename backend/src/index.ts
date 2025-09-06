@@ -3,6 +3,8 @@ import authRoutes from "./routes/auth.route";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import productsRoutes from "./routes/products.route";
+import userRoutes from "./routes/user.route";
+import settingsRoutes from "./routes/settings.route";
 
 const app = express();
 
@@ -20,5 +22,7 @@ app.use(
 
 app.use("/auth", authRoutes);
 app.use("/products", productsRoutes)
+app.use("/users",userRoutes)
+app.use("/settings",settingsRoutes)
 
 export default app;

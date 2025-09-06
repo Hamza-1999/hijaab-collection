@@ -1,10 +1,21 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Package, ShoppingCart, Users, BarChart3, Settings, LogOut, Plus } from "lucide-react"
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingCart,
+  Users,
+  BarChart3,
+  Settings,
+  LogOut,
+  Plus,
+} from "lucide-react";
+import { useLogout } from "@/lib/hooks/api";
+import { toast } from "sonner";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -13,11 +24,12 @@ const navigation = [
   { name: "Customers", href: "/admin/customers", icon: Users },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Settings", href: "/admin/settings", icon: Settings },
-]
+];
 
 export function AdminSidebar() {
-  const pathname = usePathname()
-
+  const pathname = usePathname();
+  const { mutate: logout } = useLogout();
+  const router = useRouter();
   return (
     <div className="flex h-full w-64 flex-col bg-slate-900">
       <div className="flex h-16 items-center px-6">
@@ -26,20 +38,22 @@ export function AdminSidebar() {
 
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
-          const isActive = pathname === item.href
+          const isActive = pathname === item.href;
           return (
             <Link
               key={item.name}
               href={item.href}
               className={cn(
                 "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                isActive ? "bg-amber-800 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                isActive
+                  ? "bg-amber-800 text-white"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
               )}
             >
               <item.icon className="mr-3 h-5 w-5" />
               {item.name}
             </Link>
-          )
+          );
         })}
       </nav>
 
@@ -56,7 +70,15 @@ export function AdminSidebar() {
           className="w-full mt-2 text-slate-300 hover:text-white hover:bg-slate-800"
           onClick={() => {
             // Handle logout
-            window.location.href = "/user/login"
+            logout(undefined, {
+              onSuccess: () => {
+                toast.success("Logged out successfully");
+                router.push("/user/login");
+              },
+              onError: () => {
+                toast.error("Logged out failed");
+              },
+            });
           }}
         >
           <LogOut className="mr-2 h-4 w-4" />
@@ -64,5 +86,5 @@ export function AdminSidebar() {
         </Button>
       </div>
     </div>
-  )
+  );
 }
