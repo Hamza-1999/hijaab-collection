@@ -11,6 +11,8 @@ import { Star, Truck, Shield, RefreshCw } from "lucide-react";
 import { useGetAllProducts } from "@/lib/hooks/api";
 import { usePaginationStore } from "@/components/store/PaginationStore";
 import { IProduct } from "@/lib/API/api";
+import { useEffect } from "react";
+import { initSocket } from "@/lib/socket/socket";
 
 export default function HomePage() {
   const { offset } = usePaginationStore();
@@ -20,6 +22,11 @@ export default function HomePage() {
     filter: "featured",
   });
   const featuredProducts = data?.products;
+
+  useEffect(() => {
+    const socket = initSocket();
+    console.log(socket, "socket");
+  }, []);
   // const featuredProducts = mockProducts.filter((product) => product.featured);
 
   return (

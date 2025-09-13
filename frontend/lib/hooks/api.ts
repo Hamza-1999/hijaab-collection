@@ -28,6 +28,8 @@ import {
   UpdateUserStatus,
   UProduct,
   UpdateSettings,
+  AddToCart,
+  IAddToCart,
 } from "../API/api";
 
 export const useLogin = () => {
@@ -190,5 +192,11 @@ export const useUpdateSettings = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       UpdateSettings(id, data),
+  });
+};
+
+export const useAddToCart = () => {
+  return useMutation({
+    mutationFn: (data: IAddToCart) => AddToCart(data),
   });
 };

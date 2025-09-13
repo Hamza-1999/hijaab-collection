@@ -18,12 +18,18 @@ import { useState } from "react";
 import Image from "next/image";
 import { Star, Heart, Share2, Truck, RefreshCw, Shield } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useGetAllProducts, useGetProductById } from "@/lib/hooks/api";
+import {
+  useAddToCart,
+  useGetAllProducts,
+  useGetProductById,
+} from "@/lib/hooks/api";
 import { IProduct } from "@/lib/API/api";
+import { toast } from "sonner";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const { data } = useGetProductById(id as string);
+  const { mutate: AddToCart } = useAddToCart();
   const product = data?.product;
   const { data: products } = useGetAllProducts({
     limit: 5,
@@ -49,21 +55,29 @@ export default function ProductDetailPage() {
     );
   }
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (productId: string) => {
     if (!selectedColor || !selectedSize) {
-      alert("Please select color and size");
+      toast.error("Please select color and size");
       return;
     }
-
-    cart.addItem({
-      productId: product._id,
-      quantity,
-      color: selectedColor,
-      size: selectedSize,
-      price: product.price,
-    });
-
-    alert("Added to cart!");
+    AddToCart(
+      {
+        productId: productId,
+        color: selectedColor,
+        size: selectedSize,
+        quantity: quantity,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Product Add In Cart Successfully");
+        },
+        onError: (err: any) => {
+          toast.error(
+            err?.response?.data?.message || "Error To Add This Product In Cart"
+          );
+        },
+      }
+    );
   };
 
   return (
@@ -77,7 +91,7 @@ export default function ProductDetailPage() {
             <div className="mb-4">
               <Image
                 src={product.images[selectedImage] || "/placeholder.svg"}
-                alt={product.name}
+                alt={product.title}
                 width={600}
                 height={600}
                 className="w-full h-96 lg:h-[500px] object-cover rounded-lg"
@@ -96,7 +110,7 @@ export default function ProductDetailPage() {
                 >
                   <Image
                     src={image || "/placeholder.svg"}
-                    alt={`${product.name} ${index + 1}`}
+                    alt={`${product.title} ${index + 1}`}
                     width={100}
                     height={100}
                     className="w-20 h-20 object-cover"
@@ -111,7 +125,7 @@ export default function ProductDetailPage() {
             <div className="mb-4">
               <Badge className="bg-amber-800 mb-2">Premium Quality</Badge>
               <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                {product.name}
+                {product.title}
               </h1>
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center gap-1">
@@ -152,9 +166,9 @@ export default function ProductDetailPage() {
                     <SelectValue placeholder="Select a color" />
                   </SelectTrigger>
                   <SelectContent>
-                    {product?.colors?.map((color: string) => (
-                      <SelectItem key={color} value={color}>
-                        {color}
+                    {product?.colors?.map((color: any) => (
+                      <SelectItem key={color?.color} value={color?.color}>
+                        {color?.color}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -164,15 +178,25 @@ export default function ProductDetailPage() {
               <div>
                 <label className="block text-sm font-medium mb-2">Size</label>
                 <Select value={selectedSize} onValueChange={setSelectedSize}>
-                  <SelectTrigger>
+                  <SelectTrigger disabled={!selectedColor}>
                     <SelectValue placeholder="Select a size" />
                   </SelectTrigger>
                   <SelectContent>
-                    {product?.sizes?.map((size: string) => (
+                    {/* {product?.sizes?.map((size: string) => (
                       <SelectItem key={size} value={size}>
                         {size}
                       </SelectItem>
-                    ))}
+                    ))} */}
+                    {product?.colors
+                      ?.find((clr: any) => clr.color === selectedColor)
+                      ?.sizes?.map((size: any) => (
+                        <SelectItem
+                          value={size.size}
+                          key={size.size + size.quantity}
+                        >
+                          {size.size}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -203,7 +227,8 @@ export default function ProductDetailPage() {
 
             <div className="flex gap-4 mb-8">
               <Button
-                onClick={handleAddToCart}
+                // onClick={() => handleAddToCart(product._id)}
+                onClick={() => handleAddToCart(product._id)}
                 className="flex-1 bg-amber-800 hover:bg-amber-900"
               >
                 Add to Cart

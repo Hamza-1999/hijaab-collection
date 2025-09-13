@@ -203,17 +203,17 @@ export default function ProductsPage() {
                       <div className="flex gap-2 mb-3">
                         <span className="text-xs text-slate-500">Colors:</span>
                         <div className="flex gap-1">
-                          {product.colors.slice(0, 3).map((color, index) => (
+                          {(product.colors as any).slice(0, 3).map((color:any, index:number) => (
                             <div
                               key={index}
                               className="w-4 h-4 rounded-full border border-slate-300"
-                              style={{ backgroundColor: color.toLowerCase() }}
-                              title={color}
+                              style={{ backgroundColor: color?.color?.toLowerCase() }}
+                              title={color?.color}
                             />
                           ))}
-                          {product.colors.length > 3 && (
+                          {(product.colors as any).length > 3 && (
                             <span className="text-xs text-slate-500">
-                              +{product.colors.length - 3}
+                              +{(product.colors as any).length - 3}
                             </span>
                           )}
                         </div>

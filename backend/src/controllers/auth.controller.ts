@@ -19,6 +19,17 @@ export const Login = async (req: Request, res: Response) => {
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid password" });
     }
+    if (user?.status !== "active") {
+      await sendEmail({
+        to: email,
+        subject: "Account inactivate",
+        templateName: "inactivateAccount",
+        templateData: {},
+      });
+      return res
+        .status(308)
+        .json({ message: "Your account is temporary inactive" });
+    }
     const { password: _, ...userWithoutPassword } = user.toObject();
     const token = jwt.sign(
       { id: user._id, user: user }, // Minimal info

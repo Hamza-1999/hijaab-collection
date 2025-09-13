@@ -165,7 +165,12 @@ export interface IProduct {
   price: string;
   quantity: string;
   images: any;
-  colors: string[];
+  colors: {
+    slice(arg0: number, arg1: number): unknown;
+    color: string;
+    quantity: number;
+    sizes: string[];
+  };
   sizes: string[];
   live: boolean;
   featured: boolean;
@@ -233,7 +238,7 @@ export const getAllUsers = async (params?: {
   limit?: number;
   skip?: number;
   name?: string;
-  filter?:string
+  filter?: string;
 }) => {
   const res = await axios.get(`http://localhost:5000/users/all`, {
     params,
@@ -257,16 +262,20 @@ export const DeleteUser = async (id: string) => {
 };
 
 export const UpdateUserStatus = async (id: string, status: string) => {
-  const res = await axios.patch(`http://localhost:5000/users/${id}/status`, { status }, {
-    withCredentials: true,
-  });
+  const res = await axios.patch(
+    `http://localhost:5000/users/${id}/status`,
+    { status },
+    {
+      withCredentials: true,
+    }
+  );
   return res.data;
 };
 
 export const GetSettings = async () => {
   const res = await axios.get(`http://localhost:5000/settings`, {
     withCredentials: true,
-  });  
+  });
   return res.data;
 };
 
@@ -283,3 +292,22 @@ export const UpdateSettings = async (id: string, data: any) => {
   });
   return res.data;
 };
+
+export interface IAddToCart {
+  productId: string;
+  color: string;
+  quantity: string;
+  size: string;
+}
+export const AddToCart = async (data: IAddToCart) => {
+  const res = await axios.post(
+    `http://localhost:5000/addToCart`,
+    data,
+    {
+      withCredentials: true,
+    }
+  );
+  return res.data;
+};
+
+

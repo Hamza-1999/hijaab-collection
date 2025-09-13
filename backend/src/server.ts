@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
+import { initSocket } from "./services/socket";
 
 dotenv.config();
 
@@ -40,38 +41,46 @@ mongoose
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000",
-    credentials: true,
-  },
-});
+initSocket(server);
 
-io.use((socket, next) => {
-  try {
-    const cookies = socket.handshake.headers.cookie;
-    if (!cookies) return next(new Error("No cookies found"));
+// const io = new Server(server, {
+//   cors: {
+//     origin: "http://localhost:3000",
+//     credentials: true,
+//   },
+// });
 
-    const parsedCookies = cookie.parse(cookies);
-    const token = parsedCookies.Ecommerce;
-    if (!token) return next(new Error("No token found"));
+// io.use((socket, next) => {
+//   try {
+//     const cookies = socket.handshake.headers.cookie;
+//     if (!cookies) return next(new Error("No cookies found"));
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    (socket as any).user = decoded;
-    next();
-  } catch (err) {
-    next(new Error("Authentication error"));
-  }
-});
+//     const parsedCookies = cookie.parse(cookies);
+//     const token = parsedCookies.Ecommerce;
+//     if (!token) return next(new Error("No token found"));
 
-// Handle Socket.IO Connections
-io.on("connection", (socket) => {
-  console.log(`User connected: ${(socket as any).user.id}`);
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+//     (socket as any).user = decoded;
+//     next();
+//   } catch (err) {
+//     next(new Error("Authentication error"));
+//   }
+// });
 
-  socket.on("disconnect", () => {
-    console.log(`User disconnected: ${(socket as any).user.id}`);
-  });
-});
+// const onlineUsers:any={}
+
+// // Handle Socket.IO Connections
+// io.on("connection", (socket) => {
+//   console.log(`User connected: ${(socket as any).user.id}`);
+
+//   socket.on("register", (userId) => {
+//     onlineUsers[userId] = socket.id;
+//   });
+
+//   socket.on("disconnect", () => {
+//     console.log(`User disconnected: ${(socket as any).user.id}`);
+//   });
+// });
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { User } from "../models/User.model";
 import { Settings } from "../models/settings.model";
+import { sendEmail } from "../services/emailService";
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -84,6 +85,21 @@ export const UpdateUserStatus = async (req: Request, res: Response) => {
     const user = await User.findByIdAndUpdate(id, { status }, { new: true });
     if (!user) {
       return res.status(400).json({ message: "User not found!" });
+    }
+    if (user?.status !== "active") {
+      await sendEmail({
+        to: user?.email,
+        subject: "Account inactivate",
+        templateName: "inactivateAccount",
+        templateData: {},
+      });
+    }else{
+      await sendEmail({
+        to: user?.email,
+        subject: "Account has been activated",
+        templateName: "activateAccount",
+        templateData: {},
+      });
     }
     return res
       .status(200)

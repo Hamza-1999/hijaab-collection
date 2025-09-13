@@ -16,88 +16,6 @@ interface MulterFile {
   originalname: string;
 }
 
-// export const createProduct = async (req: Request, res: Response) => {
-//   try {
-//     const {
-//       title,
-//       quantity,
-//       descripiton,
-//       price,
-//       colors,
-//       sizes,
-//       live,
-//       featured,
-//       material,
-//     } = req.body;
-//     const files = req.files as MulterFile[];
-//     if (!files) {
-//       return res
-//         .status(400)
-//         .json({ message: "atleast one product image must be reqquired" });
-//     }
-
-//     if (!title) {
-//       return res
-//         .status(400)
-//         .json({ message: "product title must be reqquired" });
-//     }
-//     if (!descripiton) {
-//       return res
-//         .status(400)
-//         .json({ message: "product descripiton must be required" });
-//     }
-//     if (!price) {
-//       return res
-//         .status(400)
-//         .json({ message: "product price must be reqquired" });
-//     }
-//     if (!colors) {
-//       return res
-//         .status(400)
-//         .json({ message: "product colors must be reqquired" });
-//     }
-//     if (!sizes) {
-//       return res
-//         .status(400)
-//         .json({ message: "product sizes must be reqquired" });
-//     }
-
-//     if (!quantity) {
-//       return res
-//         .status(400)
-//         .json({ message: "product quantity must be reqquired" });
-//     }
-
-//     const uploadPromises = (req as any).files.map((file: MulterFile) => {
-//       cloudinary.uploader.upload(file.path, { folder: "products" });
-//     });
-//     const uploadResults = await Promise.all(uploadPromises);
-
-//     files.forEach((file) => fs.unlinkSync(file.path));
-
-//     const product = await Product.create({
-//       title,
-//       quantity,
-//       descripiton,
-//       price,
-//       colors,
-//       sizes,
-//       live,
-//       featured,
-//       images: uploadResults.map((r) => r.secure_url),
-//     });
-
-//     res
-//       .status(200)
-//       .json({ message: "Product Created Successfully", product: product });
-//   } catch (error) {
-//     console.error("Login error:", error);
-//     res.status(500).json({
-//       message: "Internal server error",
-//       error: (error as Error).message,
-//     });
-//   }
-// };
 export const createProduct = async (req: Request, res: Response) => {
   try {
     const {
@@ -128,14 +46,12 @@ export const createProduct = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Product price is required" });
     if (!colors)
       return res.status(400).json({ message: "Product colors are required" });
-    if (!sizes)
-      return res.status(400).json({ message: "Product sizes are required" });
     if (!quantity)
       return res.status(400).json({ message: "Product quantity is required" });
 
     // parse arrays
-    const colorsArray = JSON.parse(colors as string);
-    const sizesArray = JSON.parse(sizes as string);
+    const colorsArray = JSON.parse(colors as any);
+    // const sizesArray = JSON.parse(sizes as string);
 
     // upload images to cloudinary
     const uploadResults = await Promise.all(
@@ -157,7 +73,7 @@ export const createProduct = async (req: Request, res: Response) => {
       featured,
       live,
       colors: colorsArray,
-      sizes: sizesArray,
+      // sizes: sizesArray,
       images: uploadResults.map((r) => r.secure_url),
     });
 
@@ -334,7 +250,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       featured,
       live,
       colors,
-      sizes,
+      // sizes,
       oldImages,
     } = req.body;
     let UpdatedImages: string[] = [];
@@ -358,6 +274,8 @@ export const updateProduct = async (req: Request, res: Response) => {
       ];
       files.forEach((file) => fs.unlinkSync(file.path));
     }
+    const colorsArray = JSON.parse(colors as any);
+
     const product = await Product.findByIdAndUpdate(
       id,
       {
@@ -368,8 +286,8 @@ export const updateProduct = async (req: Request, res: Response) => {
         material,
         featured,
         live,
-        colors,
-        sizes,
+        colors: colorsArray,
+        // sizes,
         images: UpdatedImages,
       },
       { new: true }

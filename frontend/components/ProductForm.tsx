@@ -20,10 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash, Upload, X } from "lucide-react";
+import { SignalZero, Trash, Upload, X } from "lucide-react";
 import { useCreateProduct, useUpdateProduct } from "@/lib/hooks/api";
 import { toast } from "sonner";
 import { IProduct } from "@/lib/API/api";
+
+interface ISize {
+  size: string;
+  quantity: string;
+}
 
 export default function ProductForm({ product }: { product?: any }) {
   const id = useParams();
@@ -36,8 +41,8 @@ export default function ProductForm({ product }: { product?: any }) {
       quantity: z.string().min(1, "Quantity is required"),
       material: z.string().min(1, "Material is required"),
       featured: z.boolean(),
-      colors: z.array(z.string()).min(1, "At least one color is required"),
-      sizes: z.array(z.string()).min(1, "At least one size is required"),
+      colors: z.array(z.any()).min(1, "At least one color is required"),
+      // sizes: z.array(z.string()).min(1, "At least one size is required"),
       // images: z.array(z.file()).min(1, "At least one image is required"),
       images: z
         .array(z.instanceof(File)) // use z.instanceof(File) if in browser
@@ -56,7 +61,10 @@ export default function ProductForm({ product }: { product?: any }) {
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
   const [newColor, setNewColor] = useState("");
+  // const [colors, setColors] = useState([{}]);
+  const [newQuantity, setNewQuantity] = useState(0);
   const [newSize, setNewSize] = useState("");
+  const [sizes, setSizes] = useState<ISize[]>([]);
   const [oldImages, setOldImages] = useState([""]);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -68,7 +76,7 @@ export default function ProductForm({ product }: { product?: any }) {
       material: "",
       featured: false,
       colors: [],
-      sizes: [],
+      // sizes: [],
       images: [],
     },
   });
@@ -83,19 +91,28 @@ export default function ProductForm({ product }: { product?: any }) {
         material: product.product.material,
         featured: product.product.featured,
         colors: product.product.colors,
-        sizes: product.product.sizes,
+        // sizes: product.product.sizes,
         images: [],
       });
       setOldImages(product?.product?.images);
-      console.log(product?.product?.images);
     }
   }, [product, form]);
 
   const addColor = () => {
     const colors = form.getValues("colors");
-    if (newColor && !colors.includes(newColor)) {
-      form.setValue("colors", [...colors, newColor]);
+    if (newColor === "" || sizes.length < 1) {
+      toast.error("Fill all the require details of color");
+      return;
+    }
+    if (!colors.some(c => c.color === newColor)) {
+      form.setValue("colors", [
+        ...colors,
+        { color: newColor, sizes },
+      ]);
       setNewColor("");
+      setSizes([]);
+      setNewQuantity(0 as any);
+      setNewSize("");
     }
   };
 
@@ -108,19 +125,15 @@ export default function ProductForm({ product }: { product?: any }) {
   };
 
   const addSize = () => {
-    const sizes = form.getValues("sizes");
-    if (newSize && !sizes.includes(newSize)) {
-      form.setValue("sizes", [...sizes, newSize]);
+    if (newSize && !sizes.some((size) => size.size === newSize)) {
+      setSizes([...sizes, { size: newSize, quantity: newQuantity.toString() }]);
       setNewSize("");
+      setNewQuantity(0);
     }
   };
 
   const removeSize = (size: string) => {
-    const sizes = form.getValues("sizes");
-    form.setValue(
-      "sizes",
-      sizes.filter((s) => s !== size)
-    );
+    setSizes(sizes.filter((s) => s.size !== size));
   };
 
   const onSubmit = async (data: any) => {
@@ -134,14 +147,23 @@ export default function ProductForm({ product }: { product?: any }) {
       formData.append("title", data.title);
       formData.append("description", data.description);
       formData.append("price", data.price.toString());
-      formData.append("quantity", data.quantity.toString());
+
+      // Calculate total quantity from all colors and sizes
+      const totalQuantity = data?.colors?.reduce((total: number, color: any) => {
+        const colorTotal = color?.sizes?.reduce((sizeTotal: number, size: any) => {
+          return sizeTotal + (parseInt(size.quantity) || 0);
+        }, 0) || 0;
+        return total + colorTotal;
+      }, 0) || 0;
+
+      formData.append("quantity", totalQuantity.toString());
       formData.append("material", data.material);
       formData.append("featured", data.featured.toString());
       formData.append("live", "true");
 
       // Arrays as JSON
       formData.append("colors", JSON.stringify(data.colors));
-      formData.append("sizes", JSON.stringify(data.sizes));
+      // formData.append("sizes", JSON.stringify(data.sizes));
 
       if (product) {
         formData.append("oldImages", JSON.stringify(oldImages));
@@ -151,6 +173,7 @@ export default function ProductForm({ product }: { product?: any }) {
           {
             onSuccess: () => {
               toast.success("Product Updated Successfully");
+              router.push("/admin/products");
             },
             onError: (err: any) => {
               toast.error(
@@ -166,6 +189,7 @@ export default function ProductForm({ product }: { product?: any }) {
           {
             onSuccess: () => {
               toast.success("Product Created Successfully");
+              router.push("/admin/products");
             },
             onError: (err: any) => {
               toast.error(
@@ -253,7 +277,7 @@ export default function ProductForm({ product }: { product?: any }) {
                       </div>
                     )}
                   />
-                  <Controller
+                  {/* <Controller
                     control={form.control}
                     name="quantity"
                     render={({ field, fieldState }) => (
@@ -267,7 +291,7 @@ export default function ProductForm({ product }: { product?: any }) {
                         )}
                       </div>
                     )}
-                  />
+                  /> */}
                 </div>
 
                 <Controller
@@ -473,7 +497,7 @@ export default function ProductForm({ product }: { product?: any }) {
                 <CardTitle>Available Colors</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   <Input
                     placeholder="Add color"
                     value={newColor}
@@ -482,24 +506,89 @@ export default function ProductForm({ product }: { product?: any }) {
                       e.key === "Enter" && (e.preventDefault(), addColor())
                     }
                   />
+                  <Input
+                    defaultValue={1}
+                    value={newQuantity}
+                    type="number"
+                    placeholder="Add quantity"
+                    onChange={(e) => setNewQuantity(Number(e.target.value))}
+                    onKeyDown={(e) => {
+                      if (e.key === "-") {
+                        e.preventDefault();
+                      }
+                    }}
+                  />
+                  <div className="flex flex-col gap-1">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add sizes"
+                        value={newSize}
+                        onChange={(e) => setNewSize(e.target.value)}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && (e.preventDefault(), addSize())
+                        }
+                      />
+                      <Button type="button" onClick={addSize} size="sm">
+                        Add
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {sizes &&
+                        sizes.map((size, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded"
+                          >
+                            <span className="text-sm">
+                              {size.size} ({size.quantity})
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeSize(size.size as string)}
+                              className="text-slate-500 hover:text-red-600"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
                   <Button type="button" onClick={addColor} size="sm">
-                    Add
+                    Add Color
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {form.watch("colors")?.map((color) => (
                     <div
-                      key={color}
-                      className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded"
+                      key={color.color}
+                      className="pt-4 relative flex flex-col items-start justify-center gap-1 bg-slate-100 px-2 py-1 rounded"
                     >
-                      <span className="text-sm">{color}</span>
                       <button
                         type="button"
                         onClick={() => removeColor(color)}
-                        className="text-slate-500 hover:text-red-600"
+                        className="absolute right-1 top-1 text-slate-500 hover:text-red-600 z-10"
                       >
                         <X className="h-3 w-3" />
                       </button>
+                      <div className="flex gap-1 items-center">
+                        <span className="capitalize text-sm font-bold">
+                          {color.color}:
+                        </span>
+                        <div className="capitalize text-xs">
+                          {color.sizes.map((size: ISize, i: number) => (
+                            <span className="mr-1" key={size.size}>
+                              {size.size} ({size.quantity})
+                              <span
+                                className={`${
+                                  i === color.sizes.length - 1 ? "hidden" : ""
+                                }`}
+                              >
+                                ,
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -512,7 +601,7 @@ export default function ProductForm({ product }: { product?: any }) {
             </Card>
 
             {/* Sizes */}
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Available Sizes</CardTitle>
               </CardHeader>
@@ -553,7 +642,7 @@ export default function ProductForm({ product }: { product?: any }) {
                   </p>
                 )}
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Actions */}
             <Card>
